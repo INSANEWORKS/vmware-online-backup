@@ -13,7 +13,9 @@ vmdk_manage.sh 操作名 対象サーバー
 <pre>~# /bin/ash vmdk_manage.sh backup example.machine</pre>
 
 * 各種configは各ファイルの以下を変更くださいまし
-<pre> ######## CONFIGRATION BEGIN ########
+
+<pre>
+######## CONFIGRATION BEGIN ########
 # backup target set
 TARGET_MACHINE=$1
 # backup target machine dir choose yourself
@@ -24,7 +26,9 @@ BACKUP_DIR='PATH-TO-BACKUP-DATASTORE'
 BACKUP_KEEP=2
 # date set
 TODAY=`date +%Y%m%d`
-######## CONFIGRATION END   ######## </pre>
+######## CONFIGRATION END   ########
+</pre>
+
 ※現状はbackup/restore を個別に叩くことも想定し各ファイルでconfigureを備えてますが、いずれは統合したほうが便利な気がしますん
 
 h2. バックアップ(サーバー追加から初回手動実行)
