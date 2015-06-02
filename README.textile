@@ -2,6 +2,7 @@ h1. VMWare ESXi オンラインバックアップ取得方法リストア方法
 
 * この作業は各VMwareホスト機での操作です。
 * バックアップはオンラインでできますがリストアは一旦オフラインが必要です。
+* 保持期限は2日にしてますが、vmdk_backup.sh の内部で変更可能です
 * 使用方法
 <pre>cd /vmfs/volumes/datastore1/works/scripts/BK_WORKS/
 vmdk_manage.sh 操作名 対象サーバー
