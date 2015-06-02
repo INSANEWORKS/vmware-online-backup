@@ -8,10 +8,10 @@
 ######## CONFIGRATION BEGIN ########
 # backup target set
 TARGET_MACHINE=$1
-# backup target machine dir
-TARGET_MACHINE_DIR="/vmfs/volumes/datastore1/$TARGET_MACHINE"
-# backup dir set
-BACKUP_DIR='/vmfs/volumes/FreeNAS01Store/BACKUP'
+# backup target machine dir choose yourself
+TARGET_MACHINE_DIR="TARGET-DATASTORE/$TARGET_MACHINE"
+# backup dir set dir choose yourself
+BACKUP_DIR='PATH-TO-BACKUP-DATASTORE'
 # backup keep days set
 BACKUP_KEEP=2
 # date set
