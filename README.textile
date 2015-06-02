@@ -1,0 +1,92 @@
+h1. VMWare ESXi オンラインバックアップ取得方法リストア方法
+
+* この作業は各VMwareホスト機での操作です。
+* バックアップはオンラインでできますがリストアは一旦オフラインが必要です。
+* 使用方法
+<pre>cd /vmfs/volumes/datastore1/works/scripts/BK_WORKS/
+vmdk_manage.sh 操作名 対象サーバー
+第一引数 : 操作名       -> backup もしくは restore もしくは cron
+第二引数 : 対象サーバー -> ex)  example.machine
+※ 操作名をcronにした場合は第二引数不要(リストにあるすべてのサーバーのバックアップを取得)</pre>
+* コマンド例
+<pre>~# /bin/ash vmdk_manage.sh backup example.machine</pre>
+
+h2. バックアップ(サーバー追加から初回手動実行)
+
+# シェルを叩きます
+<pre>~ # /bin/ash /vmfs/volumes/datastore1/works/scripts/BK_WORKS/vmdk_backup.sh example.machine</pre>
+# ここですでに当日のバックアップが取得されていた場合消して新たに作り直すか聞かれます。
+<pre>todays dir is already exists . Do you remove it ?[y/n] : y</pre>
+# ここまで入力すればリストアが走ります
+## vmdkにファイルアクセスするためにsnapshotを作成しています
+<pre>Create Snapshot:</pre>
+## vm-config/vmdk リストア
+<pre>Destination disk format: VMFS thin-provisioned
+Cloning disk '/vmfs/volumes/datastore1/example.machine/example.machine.vmdk'...
+Clone: 100% done.
+Remove All Snapshots:</pre>
+## 終わりましたのご報告です。
+<pre>Guest-example.machine : backup completely successed.</pre>
+
+h2. バックアップ(Cronへの次回自動取得登録作業)
+
+# リストに登録します
+<pre>~ # vi /vmfs/volumes/datastore1/works/scripts/BK_WORKS/target.lst</pre>
+※Cronセット検証後正式な物とします。
+
+
+h2. リストア (リストア元を削除しない場合)
+
+# シェルを叩きます
+<pre>~ # /bin/ash /vmfs/volumes/datastore1/works/scripts/BK_WORKS/vmdk_manage.sh restore example.machine
+PUT RESTORE START</pre>
+# リストアが必要なサーバーの元データを消すか聞かれるので n を入力します。
+<pre>Do you want to remove the Target Machine Data ?[y/n] : n</pre>
+# 直近取得しているバックアップの日付が表示されどこからリストアをするか求められます。
+<pre>Do you want to restore from time ? [ 20150601 20150602 ] : 20150602</pre>
+# ここまで入力すればリストアが走ります
+## 電源を落とし、イベントリから削除を行っています。
+<pre>Powering off VM:</pre>
+## 元のデータをoldという名前にディレクトリ名を変更しています。
+<pre>moving target machine image to old_example.machine</pre>
+## vm-config/vmdk リストア
+<pre>Destination disk format: VMFS thin-provisioned
+Cloning disk '/vmfs/volumes/FreeNAS01Store/BACKUP/20150602/example.machine/example.machine.vmdk'...
+Clone: 100% done.</pre>
+## 再度イベント理登録完了しマシンIDを返してきます。
+<pre>31</pre>
+## 終わりましたのご報告です。
+<pre>Guest-example.machine : restore completely successed.</pre>
+# 実際に削除は行わなかったのでdatastoreの中に_old_今日の日付でファイルは保存されています。
+<pre>~ # ls -ltrah /vmfs/volumes/datastore1/
+total 800864
+drwxr-xr-x    1 root     root        1.1K Jun  2 07:34 example.machine_old_20150602
+drwxr-xr-x    1 root     root        1.1K Jun  2 07:45 example.machine</pre>
+
+h2. リストア (リストア元を削除する場合)
+
+# シェルを叩きます
+<pre>~ # /bin/ash /vmfs/volumes/datastore1/works/scripts/BK_WORKS/vmdk_manage.sh restore example.machine
+PUT RESTORE START</pre>
+# リストアが必要なサーバーの元データを消すか聞かれるので y を入力します。
+<pre>Do you want to remove the Target Machine Data ?[y/n] : y</pre>
+# 直近取得しているバックアップの日付が表示されどこからリストアをするか求められます。
+<pre>Do you want to restore from time ? [ 20150601 20150602 ] : 20150602</pre>
+# ここまで入力すればリストアが走ります
+## 電源を落とし、イベントリから削除を行っています。
+<pre>Powering off VM:</pre>
+## 元のデータをdatastore1から消しています。
+<pre>removing target machine image....</pre>
+## vm-config/vmdk リストア
+<pre>Destination disk format: VMFS thin-provisioned
+Cloning disk '/vmfs/volumes/FreeNAS01Store/BACKUP/20150602/example.machine/example.machine.vmdk'...
+Clone: 100% done.</pre>
+## 再度イベント理登録完了しマシンIDを返してきます。
+<pre>33</pre>
+## 終わりましたのご報告です。
+<pre>Guest-example.machine : restore completely successed.</pre>
+# 実際に削除を行ったためdatastoreの中にリストアした物以外は保持していません。
+<pre>~ # ls -ltrah /vmfs/volumes/datastore1/
+total 800856
+drwxr-xr-x    1 root     root        1.1K Jun  2 08:40 example.machine
+drwxr-xr-x    1 root     root         512 Jun  2 08:41 ..</pre>
