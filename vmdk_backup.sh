@@ -3,8 +3,9 @@
 ###
 ## Author assy@insnaneworks.co.jp
 ## created 2015/05/29
-## changed 2015/06/02
+## changed 2015/06/03
 ## * backup dir duplicated case added
+## * restore / backup merge 1file
 ###
 
 ######## CONFIGRATION BEGIN ########
