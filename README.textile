@@ -3,34 +3,36 @@ h1. VMWare ESXi オンラインバックアップ取得方法リストア方法
 * この作業は各VMwareホスト機での操作です。
 * バックアップはオンラインでできますがリストアは一旦オフラインが必要です。
 * 保持期限は2日にしてますが、vmdk_backup.sh の内部で変更可能です
+* オウンリスクで
 * 使用方法
-<pre>cd /vmfs/volumes/datastore1/works/scripts/BK_WORKS/
-vmdk_manage.sh 操作名 対象サーバー
+<pre>cd PATH-TO-SHELL-DIR
+vmdk_backup.sh 操作名 対象サーバー
 第一引数 : 操作名       -> backup もしくは restore もしくは cron
 第二引数 : 対象サーバー -> ex)  example.machine
 ※ 操作名をcronにした場合は第二引数不要(リストにあるすべてのサーバーのバックアップを取得)</pre>
 * コマンド例
-<pre>~# /bin/ash vmdk_manage.sh backup example.machine</pre>
+<pre>~# /bin/ash vmdk_backup.sh backup example.machine</pre>
 
 * 各種configは各ファイルの以下を変更くださいまし
 <pre> ######## CONFIGRATION BEGIN ########
-# backup target set
-TARGET_MACHINE=$1
+# date set
+TODAY=`date +%Y%m%d`
+# shell's dir set
+SH_DIR='PATH-TO-SHELL-DIR'
 # backup target machine dir choose yourself
-TARGET_MACHINE_DIR="TARGET-DATASTORE/$TARGET_MACHINE"
+TARGET_DIR="PATH-TO-TARGET-DATASTORE"
 # backup dir set dir choose yourself
 BACKUP_DIR='PATH-TO-BACKUP-DATASTORE'
 # backup keep days set
 BACKUP_KEEP=2
-# date set
-TODAY=`date +%Y%m%d`
+# today's working dir set
+TODAY_BK_DIR="$BACKUP_DIR/$TODAY"
 ######## CONFIGRATION END   ######## </pre>
-※現状はbackup/restore を個別に叩くことも想定し各ファイルでconfigureを備えてますが、いずれは統合したほうが便利な気がしますん
 
 h2. バックアップ(サーバー追加から初回手動実行)
 
 # シェルを叩きます
-<pre>~ # /bin/ash /vmfs/volumes/datastore1/works/scripts/BK_WORKS/vmdk_backup.sh example.machine</pre>
+<pre>~ # /bin/ash PATH-TO-SHELL-DIR/vmdk_backup.sh example.machine</pre>
 # ここですでに当日のバックアップが取得されていた場合消して新たに作り直すか聞かれます。
 <pre>todays dir is already exists . Do you remove it ?[y/n] : y</pre>
 # ここまで入力すればリストアが走ります
@@ -38,7 +40,7 @@ h2. バックアップ(サーバー追加から初回手動実行)
 <pre>Create Snapshot:</pre>
 ## vm-config/vmdk リストア
 <pre>Destination disk format: VMFS thin-provisioned
-Cloning disk '/vmfs/volumes/datastore1/example.machine/example.machine.vmdk'...
+Cloning disk 'PATH-TO-TARGET-DATASTORE/example.machine.vmdk'...
 Clone: 100% done.
 Remove All Snapshots:</pre>
 ## 終わりましたのご報告です。
@@ -47,14 +49,14 @@ Remove All Snapshots:</pre>
 h2. バックアップ(Cronへの次回自動取得登録作業)
 
 # リストに登録します
-<pre>~ # vi /vmfs/volumes/datastore1/works/scripts/BK_WORKS/target.lst</pre>
+<pre>~ # vi PATH-TO-SHELL-DIR/target.lst</pre>
 ※Cronセット検証後正式な物とします。
 
 
 h2. リストア (リストア元を削除しない場合)
 
 # シェルを叩きます
-<pre>~ # /bin/ash /vmfs/volumes/datastore1/works/scripts/BK_WORKS/vmdk_manage.sh restore example.machine
+<pre>~ # /bin/ash PATH-TO-SHELL-DIR/vmdk_backup.sh restore example.machine
 PUT RESTORE START</pre>
 # リストアが必要なサーバーの元データを消すか聞かれるので n を入力します。
 <pre>Do you want to remove the Target Machine Data ?[y/n] : n</pre>
@@ -67,14 +69,14 @@ PUT RESTORE START</pre>
 <pre>moving target machine image to old_example.machine</pre>
 ## vm-config/vmdk リストア
 <pre>Destination disk format: VMFS thin-provisioned
-Cloning disk '/vmfs/volumes/FreeNAS01Store/BACKUP/20150602/example.machine/example.machine.vmdk'...
+Cloning disk 'PATH-TO-BACKUP-DATASTORE/20150602/example.machine/example.machine.vmdk'...
 Clone: 100% done.</pre>
 ## 再度イベント理登録完了しマシンIDを返してきます。
 <pre>31</pre>
 ## 終わりましたのご報告です。
 <pre>Guest-example.machine : restore completely successed.</pre>
 # 実際に削除は行わなかったのでdatastoreの中に_old_今日の日付でファイルは保存されています。
-<pre>~ # ls -ltrah /vmfs/volumes/datastore1/
+<pre>~ # ls -ltrah PATH-TO-TARGET-DATASTORE
 total 800864
 drwxr-xr-x    1 root     root        1.1K Jun  2 07:34 example.machine_old_20150602
 drwxr-xr-x    1 root     root        1.1K Jun  2 07:45 example.machine</pre>
@@ -82,7 +84,7 @@ drwxr-xr-x    1 root     root        1.1K Jun  2 07:45 example.machine</pre>
 h2. リストア (リストア元を削除する場合)
 
 # シェルを叩きます
-<pre>~ # /bin/ash /vmfs/volumes/datastore1/works/scripts/BK_WORKS/vmdk_manage.sh restore example.machine
+<pre>~ # /bin/ash PATH-TO-SHELL-DIR/vmdk_backup.sh restore example.machine
 PUT RESTORE START</pre>
 # リストアが必要なサーバーの元データを消すか聞かれるので y を入力します。
 <pre>Do you want to remove the Target Machine Data ?[y/n] : y</pre>
@@ -95,14 +97,14 @@ PUT RESTORE START</pre>
 <pre>removing target machine image....</pre>
 ## vm-config/vmdk リストア
 <pre>Destination disk format: VMFS thin-provisioned
-Cloning disk '/vmfs/volumes/FreeNAS01Store/BACKUP/20150602/example.machine/example.machine.vmdk'...
+Cloning disk 'PATH-TO-BACKUP-DATASTORE/20150602/example.machine/example.machine.vmdk'...
 Clone: 100% done.</pre>
 ## 再度イベント理登録完了しマシンIDを返してきます。
 <pre>33</pre>
 ## 終わりましたのご報告です。
 <pre>Guest-example.machine : restore completely successed.</pre>
 # 実際に削除を行ったためdatastoreの中にリストアした物以外は保持していません。
-<pre>~ # ls -ltrah /vmfs/volumes/datastore1/
+<pre>~ # ls -ltrah PATH-TO-TARGET-DATASTORE
 total 800856
 drwxr-xr-x    1 root     root        1.1K Jun  2 08:40 example.machine
 drwxr-xr-x    1 root     root         512 Jun  2 08:41 ..</pre>
