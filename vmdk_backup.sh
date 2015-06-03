@@ -34,6 +34,7 @@ die (){
 check_before_run (){
   for i in `vim-cmd vimsvc/task_list | grep vim.Task:haTask-$1 | grep $2 | sed -e 's/.*vim.Task://' -e "s/[', ]//g"`; do
     [ -z "`vim-cmd vimsvc/task_info $i | grep running`" ] || die "running before proc"
+    return 1
   done
 }
 # copy vm
@@ -50,19 +51,19 @@ copy_s_to_d_vmdk (){
 
 ### work pattern change
 if [ "$1" = "backup" ] ; then
-  [ ! -z "$2" ] || dir "Please input target machine"
+  [ ! -z "$2" ] || die "Please input target machine"
   WORKS=$1
-  echo "GET BACK START"
+  echo "############ $1 $2 start `date` ##########"
   if [ "$2" = "cron" ] ; then
-    $TARGET_MACHINE=`cat $SH_DIR/target.lst`
+    TARGET_MACHINE=`cat $SH_DIR/target.lst`
   else
-    $TARGET_MACHINE=$2
+    TARGET_MACHINE=$2
   fi
 elif [ "$1" = "restore" ] ; then
-  [ ! -z "$2" ] || dir "Please input target machine"
-  echo "PUT RESTORE START"
+  [ ! -z "$2" ] || die "Please input target machine"
+  echo "############ $1 $2 start `date` ##########"
   WORKS=$1
-  $TARGET_MACHINE=$2
+  TARGET_MACHINE=$2
 else
   die "Please input 1st args is backup/restore"
 fi
@@ -70,13 +71,13 @@ fi
 if [ "$WORKS" = "backup" ] ; then
   for i in do $TARGET_MACHINE ; do
     # set source dir
-    SOURCE_DIR="$TARGET_DIR/$TARGET_MACHINE"
+    SOURCE_DIR="$TARGET_DIR/$i"
     # set distination dir
-    DISTINATION_DIR="$TODAY_BK_DIR/$TARGET_MACHINE"
+    DISTINATION_DIR="$TODAY_BK_DIR/$i"
     # set target Vmid
-    MACHINE_ID=`vim-cmd vmsvc/getallvms | grep $TARGET_MACHINE | awk '{ print $1 }'`
+    MACHINE_ID=`vim-cmd vmsvc/getallvms | grep $i | awk '{ print $1 }'`
     # set taget vmdk
-    TARGET_VMDK=`cat $SOURCE_DIR/$TARGET_MACHINE.vmx | grep vmdk | cut -d " " -f 3 | sed -e "s/\"//g"`
+    TARGET_VMDK=`cat $SOURCE_DIR/$i.vmx | grep vmdk | cut -d " " -f 3 | sed -e "s/\"//g"`
   
     # make dir if dir not found
     if [ -e $DISTINATION_DIR ]; then
@@ -91,12 +92,12 @@ if [ "$WORKS" = "backup" ] ; then
     fi
 
     ## copy config file
-    for i in vmx vmxf vmsd nvram ; do
-      cp $SOURCE_DIR/$TARGET_MACHINE".$i" $DISTINATION_DIR/
+    for j in vmx vmxf vmsd nvram ; do
+      cp $SOURCE_DIR/$i".$j" $DISTINATION_DIR/
     done
 
     # take a snapshot (This process only)
-    vim-cmd vmsvc/snapshot.create $MACHINE_ID $TARGET_MACHINE
+    vim-cmd vmsvc/snapshot.create $MACHINE_ID $i
     [ ! -z $? ] || die "Snapshot create error"
     # check before run -> call function
     while check_before_run $MACHINE_ID createSnapshot; do sleep 1; done
@@ -115,7 +116,10 @@ if [ "$WORKS" = "backup" ] ; then
     vim-cmd vmsvc/snapshot.removeall $MACHINE_ID
 
     # old dir cleaning
-    find /vmfs/volumes/FreeNAS01Store/BACKUP/ -mtime +$BACKUP_KEEP -type d -maxdepth 1 -exec rm -r {} \;
+    find $BACKUP_DIR/ -mtime +$BACKUP_KEEP -type d -maxdepth 1 -exec rm -r {} \;
+    # O-WA-RI
+    echo "############ $TARGET_MACHINE  $WORKS fin.. `date` ##########"
+    exit 0
   done
 elif [ "$WORKS" = "restore" ] ; then
   # check remove machine data
@@ -159,7 +163,7 @@ elif [ "$WORKS" = "restore" ] ; then
   [ ! -z $? ] || die "Error : cloning failed. your restore  process did not complete."
   # regist target machine
   vim-cmd solo/registervm $DISTNATION_DIR/$TARGET_MACHINE.vmx
+  # O-WA-RI
+  echo "############ $TARGET_MACHINE  $WORKS fin.. `date` ##########"
+  exit 0
 fi
-# O-WA-RI
-echo "Guest-"$TARGET_MACHINE" : $WORKS completely successed."
-exit 0
