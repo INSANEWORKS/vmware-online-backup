@@ -15,17 +15,17 @@ vmdk_backup.sh 操作名 対象サーバー
 * 各種configは各ファイルの以下を変更くださいまし
 
 <pre> ######## CONFIGRATION BEGIN ########
- # date set
+# date set
 TODAY=`date +%Y%m%d`
- # shell's dir set
+# shell's dir set
 SH_DIR='PATH-TO-SHELL-DIR'
- # backup target machine dir choose yourself
+# backup target machine dir choose yourself
 TARGET_DIR="PATH-TO-TARGET-DATASTORE"
- # backup dir set dir choose yourself
+# backup dir set dir choose yourself
 BACKUP_DIR='PATH-TO-BACKUP-DATASTORE'
- # backup keep days set
+# backup keep days set
 BACKUP_KEEP=2
- # today's working dir set
+# today's working dir set
 TODAY_BK_DIR="$BACKUP_DIR/$TODAY"
 ######## CONFIGRATION END   ########
 </pre>
