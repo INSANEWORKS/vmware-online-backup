@@ -69,7 +69,7 @@ else
 fi
 ### go to backup or restore working
 if [ "$WORKS" = "backup" ] ; then
-  for i in do $TARGET_MACHINE ; do
+  for i in $TARGET_MACHINE ; do
     # set source dir
     SOURCE_DIR="$TARGET_DIR/$i"
     # set distination dir
@@ -109,7 +109,7 @@ if [ "$WORKS" = "backup" ] ; then
     #  vmkfstools --diskformat monosparse --clonevirtualdisk  $SOUECE_DIR/$i $DISTINATION_DIR/$i
     #done
     # if your resource is sufficient enough , select this
-    copy_s_to_d_vmdk $TARGET_VMDK $SOURCE_DIR $DISTINATION_DIR
+    copy_s_to_d_vmdk "$TARGET_VMDK" $SOURCE_DIR $DISTINATION_DIR
     [ ! -z $? ] || die "Error : cloning failed. your backup process did not complete."
 
     # remove this process used snapshot
@@ -132,9 +132,9 @@ elif [ "$WORKS" = "restore" ] ; then
   MACHINE_ID=`vim-cmd vmsvc/getallvms | grep $TARGET_MACHINE | awk '{ print $1 }'`
   # set source dir
   SOURCE_DIR="$BACKUP_DIR/$ANS02/$TARGET_MACHINE"
-  DISTNATION_DIR="$TARGET_DIR/$TARGET_MACHINE"
+  DISTINATION_DIR="$TARGET_DIR/$TARGET_MACHINE"
   # get taget vmdk
-  TARGET_VMDK=`cat $DISTNATION_DIR/$TARGET_MACHINE.vmx | grep vmdk | cut -d " " -f 3 | sed -e "s/\"//g"`
+  TARGET_VMDK=`cat $DISTINATION_DIR/$TARGET_MACHINE.vmx | grep vmdk | cut -d " " -f 3 | sed -e "s/\"//g"`
 
   # power off target machine
   vim-cmd vmsvc/power.off $MACHINE_ID
@@ -145,24 +145,24 @@ elif [ "$WORKS" = "restore" ] ; then
   # target dir remove or move
   if [ "$ANS01" = "y" ] ; then
     echo "removing target machine image...."
-    rm -rf $DISTNATION_DIR
+    rm -rf $DISTINATION_DIR
   elif [ "$ANS01" = "n" ] ; then
     echo "moving target machine image to old_$TARGET_MACHINE"
-    mv $DISTNATION_DIR/ ${DISTNATION_DIR}_old_$TODAY/
+    mv $DISTINATION_DIR/ ${DISTINATION_DIR}_old_$TODAY/
   else
     die "An unknown character was entered! stop this process!"
   fi
   # make dir if dir not found
-  [ -d $DISTNATION_DIR ] || mkdir -p $DISTNATION_DIR
+  [ -d $DISTINATION_DIR ] || mkdir -p $DISTINATION_DIR
   ## copy config file
   for i in vmx vmxf vmsd nvram ; do
-    cp $SOURCE_DIR/$TARGET_MACHINE".$i" $DISTNATION_DIR/
+    cp $SOURCE_DIR/$TARGET_MACHINE".$i" $DISTINATION_DIR/
   done
   # put restore
-  copy_s_to_d_vmdk $TARGET_VMDK $SOURCE_DIR $DISTINATION_DIR
+  copy_s_to_d_vmdk "$TARGET_VMDK" $SOURCE_DIR $DISTINATION_DIR
   [ ! -z $? ] || die "Error : cloning failed. your restore  process did not complete."
   # regist target machine
-  vim-cmd solo/registervm $DISTNATION_DIR/$TARGET_MACHINE.vmx
+  vim-cmd solo/registervm $DISTINATION_DIR/$TARGET_MACHINE.vmx
   # O-WA-RI
   echo "############ $TARGET_MACHINE  $WORKS fin.. `date` ##########"
   exit 0
