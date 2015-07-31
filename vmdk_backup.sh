@@ -3,9 +3,10 @@
 ###
 ## Author assy@insnaneworks.co.jp
 ## created 2015/05/29
-## changed 2015/06/03
+## changed 2015/07/23
 ## * backup dir duplicated case added
 ## * restore / backup merge 1file
+## * restore To move without the machine ID
 ###
 
 ######## CONFIGRATION BEGIN ########
@@ -56,6 +57,7 @@ if [ "$1" = "backup" ] ; then
   echo "############ $1 $2 start `date` ##########"
   if [ "$2" = "cron" ] ; then
     TARGET_MACHINE=`cat $SH_DIR/target.lst`
+    ANS01='y'
   else
     TARGET_MACHINE=$2
   fi
@@ -81,7 +83,9 @@ if [ "$WORKS" = "backup" ] ; then
   
     # make dir if dir not found
     if [ -e $DISTINATION_DIR ]; then
-      read -p "todays dir is already exists . Do you remove it ?[y/n] : " ANS01
+      if [ -z $ANS01 ]; then
+        read -p "todays dir is already exists . Do you remove it ?[y/n] : " ANS01
+      fi
       if [ "$ANS01" = "y" ]; then
         rm -rf $DISTINATION_DIR && mkdir -p $DISTINATION_DIR
       else
@@ -135,13 +139,14 @@ elif [ "$WORKS" = "restore" ] ; then
   DISTINATION_DIR="$TARGET_DIR/$TARGET_MACHINE"
   # get taget vmdk
   TARGET_VMDK=`cat $DISTINATION_DIR/$TARGET_MACHINE.vmx | grep vmdk | cut -d " " -f 3 | sed -e "s/\"//g"`
-
-  # power off target machine
-  vim-cmd vmsvc/power.off $MACHINE_ID
-  # unregist target machine
-  vim-cmd vmsvc/unregister $MACHINE_ID
-  # check unregist before run
-  while check_before_run $MACHINE_ID unregister; do sleep 1; done
+  if [ ! -z "$MACHINE_ID" ] ; then
+    # power off target machine
+    vim-cmd vmsvc/power.off $MACHINE_ID
+    # unregist target machine
+    vim-cmd vmsvc/unregister $MACHINE_ID
+    # check unregist before run
+    while check_before_run $MACHINE_ID unregister; do sleep 1; done
+  fi
   # target dir remove or move
   if [ "$ANS01" = "y" ] ; then
     echo "removing target machine image...."
@@ -159,7 +164,7 @@ elif [ "$WORKS" = "restore" ] ; then
     cp $SOURCE_DIR/$TARGET_MACHINE".$i" $DISTINATION_DIR/
   done
   # put restore
-  copy_s_to_d_vmdk "$TARGET_VMDK" $SOURCE_DIR $DISTINATION_DIR
+  copy_s_to_d_vmdk $TARGET_VMDK $SOURCE_DIR $DISTINATION_DIR
   [ ! -z $? ] || die "Error : cloning failed. your restore  process did not complete."
   # regist target machine
   vim-cmd solo/registervm $DISTINATION_DIR/$TARGET_MACHINE.vmx
