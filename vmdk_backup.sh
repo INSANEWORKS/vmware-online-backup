@@ -3,10 +3,13 @@
 ###
 ## Author assy@insnaneworks.co.jp
 ## created 2015/05/29
+## changed 2015/06/03
 ## changed 2015/07/23
+## changed 2015/08/03
 ## * backup dir duplicated case added
 ## * restore / backup merge 1file
 ## * restore To move without the machine ID
+## * backup cron style bug fix
 ###
 
 ######## CONFIGRATION BEGIN ########
@@ -19,7 +22,7 @@ TARGET_DIR="PATH-TO-TARGET-DATASTORE"
 # backup dir set dir choose yourself
 BACKUP_DIR='PATH-TO-BACKUP-DATASTORE'
 # backup keep days set
-BACKUP_KEEP=2
+BACKUP_KEEP=1
 # today's working dir set
 TODAY_BK_DIR="$BACKUP_DIR/$TODAY"
 ######## CONFIGRATION END   ########
@@ -33,15 +36,15 @@ die (){
 
 # check before run
 check_before_run (){
-  for i in `vim-cmd vimsvc/task_list | grep vim.Task:haTask-$1 | grep $2 | sed -e 's/.*vim.Task://' -e "s/[', ]//g"`; do
-    [ -z "`vim-cmd vimsvc/task_info $i | grep running`" ] || die "running before proc"
+  for l in `vim-cmd vimsvc/task_list | grep vim.Task:haTask-$1 | grep $2 | sed -e 's/.*vim.Task://' -e "s/[', ]//g"`; do
+    [ -z "`vim-cmd vimsvc/task_info $l | grep running`" ] || die "running before proc"
     return 1
   done
 }
 # copy vm
 copy_s_to_d_vmdk (){
-  for i in $1 ; do
-    vmkfstools --diskformat thin --clonevirtualdisk  $2/$i $3/$i
+  for k in $1 ; do
+    vmkfstools --diskformat thin --clonevirtualdisk  $2/$k $3/$k
   done
 }
 ######## FUNCTIONS END      ########
@@ -122,8 +125,7 @@ if [ "$WORKS" = "backup" ] ; then
     # old dir cleaning
     find $BACKUP_DIR/ -mtime +$BACKUP_KEEP -type d -maxdepth 1 -exec rm -r {} \;
     # O-WA-RI
-    echo "############ $TARGET_MACHINE  $WORKS fin.. `date` ##########"
-    exit 0
+    echo "############ $i $WORKS fin.. `date` ##########"
   done
 elif [ "$WORKS" = "restore" ] ; then
   # check remove machine data
